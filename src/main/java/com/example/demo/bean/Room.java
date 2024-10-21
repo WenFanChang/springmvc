@@ -7,7 +7,7 @@ import lombok.Data;
 @AllArgsConstructor
 
 public class Room {
-	private Integer rommId;
+	private Integer roomId;
 	private String roomName;
 	private Integer roomSize;
 	
