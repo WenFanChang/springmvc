@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.example.demo.bean.Person;
 
-// 了解各種不同URL與參數的傳遞接收 sss
+// 了解各種不同URL與參數的傳遞接收 
 @Controller
 @RequestMapping("/api")
 public class ApiController {
