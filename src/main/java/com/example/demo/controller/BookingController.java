@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.example.demo.bean.Room;
+import com.example.demo.exception.RoomAlreadyExistsException;
+import com.example.demo.exception.RoomNotFoundException;
+import com.example.demo.service.RoomService;
 
 /**
  * 會議室預訂系統(Web API)
@@ -78,103 +83,65 @@ import com.example.demo.bean.Room;
 @Controller
 @RequestMapping("/booking")
 public class BookingController {
-	//建立會議室
-	private static List<Room> rooms = new ArrayList<>(List.of(
-				new Room(101, "101(S)", 10),
-				new Room(202, "202(M)", 25),
-				new Room(303, "303(L)", 80)
-			));
 	
-	//查詢所有會議室
+	@Autowired
+	private RoomService roomService;
+	
+	// 查詢所有會議室
+	// 路徑: /rooms
 	@GetMapping("/rooms")
 	@ResponseBody
 	public String getRooms() {
-		return rooms.toString();
+		return roomService.getAllRooms().toString();
 	}
 	
-	//查詢單筆會議室
-	//路徑: /rooms/1
+	// 查詢單筆會議室 
+	// 路徑: /room/1
 	@GetMapping("/room/{roomId}")
 	@ResponseBody
 	public String getRoom(@PathVariable("roomId") Integer roomId) {
-		Optional<Room> optRoom = rooms.stream()
-					.filter(room -> room.getRoomId().equals(roomId))
-					.findAny();
-		if(optRoom.isPresent()) {
-			Room room = optRoom.get();
-			return room.toString();
-		} else {
-			return "Not Found";
-		}
-		
+		return roomService.getRoomById(roomId).toString();
 	}
 	
 	// 新增會議室
-		// 路徑: /room/add?roomId=404&roomName=404(S)&roomSize=10
-		@GetMapping("/room/add")
-		@ResponseBody
-		public String addRoom(@RequestParam(name = "roomId", required = true) Integer roomId,
-							  @RequestParam(name = "roomName", required = true) String roomName,
-							  @RequestParam(name = "roomSize", required = true) Integer roomSize) {
-			// 確認是否有已有此會議室
-			Predicate<Room> roomIdFilter = room -> room.getRoomId().equals(roomId); // 過濾條件
-			Optional<Room> optRoom = rooms.stream().filter(roomIdFilter).findAny();
-			if(optRoom.isPresent()) {
-				return "新增失敗: 會議室已存在";
-			}
-			// 新增會議室 
-			Room newRoom = new Room(roomId, roomName, roomSize);
-			rooms.add(newRoom);
-			return "新增成功";
-		}
+	// 路徑: /room/add?roomId=404&roomName=404(S)&roomSize=10
+	@GetMapping("/room/add")
+	@ResponseBody
+	public String addRoom(@RequestParam(name = "roomId", required = true) Integer roomId,
+						  @RequestParam(name = "roomName", required = true) String roomName,
+						  @RequestParam(name = "roomSize", required = true) Integer roomSize) {
+		roomService.addRoom(roomId, roomName, roomSize);
+		return "新增成功";
+	}
 	
 	// 修改會議室
-		// 路徑: /room/update/404?roomName=404(M)&roomSize=55
-		@GetMapping("/room/update/{roomId}")
-		@ResponseBody
-		public String updateRoom(@PathVariable(name = "roomId") Integer roomId,
-								 @RequestParam(name = "roomName", required = false) String roomName,
-								 @RequestParam(name = "roomSize", required = false) Integer roomSize) {
-			// 確認是否有已有此會議室
-			Predicate<Room> roomIdFilter = room -> room.getRoomId().equals(roomId); // 過濾條件
-			Optional<Room> optRoom = rooms.stream().filter(roomIdFilter).findAny();
-			if(optRoom.isEmpty()) {
-				return "修改失敗: 會議室不存在";
-			}
-			
-			Room updateRoom = optRoom.get(); // 得到要修改的會議室物件 
-			// 判斷是否 roomName 有資料進行修改
-			if(roomName != null) {
-				updateRoom.setRoomName(roomName); // 修改 roomName
-			}
-			
-			// 判斷是否 roomSize 有資料進行修改
-			if(roomSize != null) {
-				updateRoom.setRoomSize(roomSize); // 修改 roomSize
-			}
-			
-			return "修改完畢";
-		}
-		
-		//刪除會議室
-		// 路徑: /room/delete/404
-		@GetMapping("/room/delete/{roomId}")
-		@ResponseBody
-		public String deleteRoom(@PathVariable("roomId") Integer roomId) {
-			// 確認是否有已有此會議室
-			Predicate<Room> roomIdFilter = room -> room.getRoomId().equals(roomId); // 過濾條件
-			Optional<Room> optRoom = rooms.stream().filter(roomIdFilter).findAny();
-			if (optRoom.isEmpty()) {
-				return "刪除失敗: 會議是不存在";
-				
-			}
-			Room deleteRoom = optRoom.get();  //取的要刪除會議室物件
-			rooms.remove(deleteRoom);   //移除會議室
-			return "刪除成功";
-			
-			
-		}
-		
-		
-			
+	// 路徑: /room/update/404?roomName=404(M)&roomSize=55
+	@GetMapping("/room/update/{roomId}")
+	@ResponseBody
+	public String updateRoom(@PathVariable(name = "roomId") Integer roomId,
+							 @RequestParam(name = "roomName", required = false) String roomName,
+							 @RequestParam(name = "roomSize", required = false) Integer roomSize) {
+		roomService.updateRoom(roomId, roomName, roomSize);
+		return "修改完畢";
+	}
+	
+	// 刪除會議室
+	// 路徑: /room/delete/404
+	@GetMapping("/room/delete/{roomId}")
+	@ResponseBody
+	public String deleteRoom(@PathVariable("roomId") Integer roomId) {
+		roomService.deleteRoom(roomId);
+		return "刪除成功";
+	}
+	
+	//錯誤處理 捕捉 RoomNotFoundException
+	@ExceptionHandler({RoomNotFoundException.class, RoomNotFoundException.class})
+	@ResponseBody
+	public String handleRoomNotFoundException(RuntimeException e) {
+		return e.getMessage();
+	}
+	
+
+	
+	
 }
