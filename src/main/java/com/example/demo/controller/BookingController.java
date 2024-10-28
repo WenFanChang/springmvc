@@ -3,13 +3,17 @@ package com.example.demo.controller;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.function.Predicate;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -90,45 +94,45 @@ public class BookingController {
 	// 查詢所有會議室
 	// 路徑: /rooms
 	@GetMapping("/rooms")
-	@ResponseBody
-	public String getRooms() {
-		return roomService.getAllRooms().toString();
+	public String getRooms(Model model, @ModelAttribute Room room) {
+		model.addAttribute("rooms", roomService.getAllRooms());
+		model.addAttribute("actionUri", "/room/add");  //新增表單的 action
+		model.addAttribute("actionName", "/Add");  //action狀態名
+		return "booking/room";
 	}
 	
 	// 查詢單筆會議室 
 	// 路徑: /room/1
 	@GetMapping("/room/{roomId}")
-	@ResponseBody
-	public String getRoom(@PathVariable("roomId") Integer roomId) {
-		return roomService.getRoomById(roomId).toString();
+	public String getRoom(@PathVariable("roomId") Integer roomId, Model model) {
+		model.addAttribute("rooms", roomService.getAllRooms());
+		model.addAttribute("room", roomService.getRoomById(roomId));
+		model.addAttribute("actionUri", "/room/update/" + roomId);  //新增表單的 action
+		model.addAttribute("actionName", "Update");  //action狀態名
+		return "booking/room";
 	}
 	
 	// 新增會議室
 	// 路徑: /room/add?roomId=404&roomName=404(S)&roomSize=10
-	@GetMapping("/room/add")
+	@PostMapping("/room/add")
 	@ResponseBody
-	public String addRoom(@RequestParam(name = "roomId", required = true) Integer roomId,
-						  @RequestParam(name = "roomName", required = true) String roomName,
-						  @RequestParam(name = "roomSize", required = true) Integer roomSize) {
-		roomService.addRoom(roomId, roomName, roomSize);
+	public String addRoom(Room room) {
+		roomService.addRoom(room.getRoomId(), room.getRoomName(), room.getRoomSize());
 		return "新增成功";
 	}
 	
 	// 修改會議室
 	// 路徑: /room/update/404?roomName=404(M)&roomSize=55
-	@GetMapping("/room/update/{roomId}")
+	@PostMapping("/room/update/{roomId}")
 	@ResponseBody
-	public String updateRoom(@PathVariable(name = "roomId") Integer roomId,
-							 @RequestParam(name = "roomName", required = false) String roomName,
-							 @RequestParam(name = "roomSize", required = false) Integer roomSize) {
-		roomService.updateRoom(roomId, roomName, roomSize);
+	public String updateRoom(@PathVariable(name = "roomId") Integer roomId, Room room) {
+		roomService.updateRoom(roomId, room.getRoomName(), room.getRoomSize());
 		return "修改完畢";
 	}
 	
 	// 刪除會議室
 	// 路徑: /room/delete/404
 	@GetMapping("/room/delete/{roomId}")
-	@ResponseBody
 	public String deleteRoom(@PathVariable("roomId") Integer roomId) {
 		roomService.deleteRoom(roomId);
 		return "刪除成功";
