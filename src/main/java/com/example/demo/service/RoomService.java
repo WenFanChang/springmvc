@@ -30,6 +30,10 @@ public class RoomService {
 						  .orElseThrow(() -> new RoomNotFoundException("找不到會議室: roomId " + roomId));
 		}
 		
+		public void addRoom(Room room) {
+			addRoom(room.getRoomId(), room.getRoomName(), room.getRoomSize());
+		}
+		
 		public void addRoom(Integer roomId, String roomName, Integer roomSize) {
 			//該Room 是否已經存在
 			Optional<Room> existingRoom = roomDao.getRoomById(roomId);
@@ -39,6 +43,10 @@ public class RoomService {
 			Room room = new Room(roomId, roomName, roomSize);
 			roomDao.addRoom(room);
 			
+		}
+		
+		public void updateRoom(Integer roomId, Room room) {
+			updateRoom(roomId, room.getRoomName(), room.getRoomSize());
 		}
 		
 		public void updateRoom(Integer roomId, String roomName, Integer roomSize) {
